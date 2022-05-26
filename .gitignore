@@ -1,0 +1,4 @@
+cloud-init*
+meta-data
+user-data
+*.qcow2
