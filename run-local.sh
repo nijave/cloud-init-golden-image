@@ -10,6 +10,11 @@ test -f $BASE_IMAGE_NAME || wget https://repo.almalinux.org/almalinux/8/cloud/x8
 
 . run-common.sh
 
+cat <<EOF | tee meta-data
+instance-id: abc123
+local-hostname: elasticsearch
+EOF
+
 cp $BASE_IMAGE_NAME $NEW_IMAGE_NAME
 xorriso -as genisoimage -output cloud-init.iso -volid CIDATA -joliet -rock user-data meta-data
 

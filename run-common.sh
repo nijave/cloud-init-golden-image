@@ -17,8 +17,3 @@ runcmd:
   - [cloud-init, clean, -l, -s]
   - [poweroff]
 EOF
-
-cat <<EOF | tee meta-data
-instance-id: abc123
-local-hostname: elasticsearch
-EOF
