@@ -2,8 +2,6 @@
 
 set -euxo pipefail
 
-export AWS_DEFAULT_REGION=us-east-2
-
 . run-common.sh
 
 # Get vpc-id
@@ -51,6 +49,8 @@ AMI_ID=$(
     --query 'ImageId' \
     --output text
 )
+
+echo "::set-output name=AMI_ID::$AMI_ID"
 
 aws ec2 terminate-instances \
   --instance-ids $EC2_ID
