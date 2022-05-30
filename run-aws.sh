@@ -1,0 +1,57 @@
+#!/bin/bash
+
+set -eux
+
+export AWS_DEFAULT_REGION=us-east-2
+
+. run-common.sh
+
+# Get vpc-id
+VPC_ID=$(aws ec2 describe-vpcs --filters Name=is-default,Values=true --query 'Vpcs[0].VpcId' --output text)
+SUBNET_ID=$(aws ec2 describe-subnets --filters Name=vpc-id,Values=$VPC_ID --query 'Subnets[0].SubnetId' --output text)
+
+# Get security-group id
+SG_ID=$(aws ec2 describe-security-groups --filters Name=vpc-id,Values=$VPC_ID --group-names "default" --query "SecurityGroups[0].GroupId" --output text)
+
+IMAGE_ID=$(curl -s https://wiki.almalinux.org/ci-data/aws_amis.csv | grep "$AWS_DEFAULT_REGION" | grep x86_64 | grep -v beta | head -n 1 | awk -F, '{print $4}' | tr -d '"')
+
+# Create ec2 instance
+#     --key-name $KEY_NAME \
+EC2_ID=$(
+  aws ec2 run-instances \
+    --image-id $IMAGE_ID \
+    --instance-type t3.small \
+    --security-group-ids $SG_ID \
+    --subnet-id $SUBNET_ID \
+    --user-data "$(cat user-data)" \
+    --query 'Instances[0].InstanceId' \
+    --output text
+)
+
+# Wait 10 minutes for completion
+tries=10
+while [ $(aws ec2 describe-instances --query 'Reservations[0].Instances[0].State.Name' --output text --instance-ids $EC2_ID) != "stopped" ]; do
+  sleep 60
+  tries=$((tries-1))
+  if [ $tries -eq 0 ]; then
+    echo "Instance didn't shutdown before timeout" 2>&1
+    aws ec2 stop-instances --instance-ids $EC2_ID
+    exit 1
+  fi
+done
+
+AMI_ID=$(
+  aws ec2 create-image \
+    --instance-id $EC2_ID \
+    --name $(date +%Y-%m-%d-%H-%M)-cloud-init-demo-elasticsearch \
+    --query 'ImageId' \
+    --output text
+)
+
+aws ec2 terminate-instances \
+  --instance-ids $EC2_ID
+
+aws ec2 describe-images \
+  --image-ids $AMI_ID
+
+# aws ec2 modify-instance-attribute --user-data "" --instance-id
