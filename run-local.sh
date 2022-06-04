@@ -18,14 +18,14 @@ EOF
 cp $BASE_IMAGE_NAME $NEW_IMAGE_NAME
 xorriso -as genisoimage -output cloud-init.iso -volid CIDATA -joliet -rock user-data meta-data
 
+  -drive file=cloud-init.iso,media=cdrom \
 qemu-system-x86_64 \
   -drive file=$NEW_IMAGE_NAME \
-  -drive file=cloud-init.iso,media=cdrom \
   -cpu host \
   -m 1G -machine type=q35,accel=kvm \
   -nic user,hostfwd=tcp::60022-:22 \
   -serial mon:stdio -nographic
 
-# ssh -i cloud-init -p 60022 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -vv cloudinit@localhost
+# ssh -i cloud-init -p 60022 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=2 -o ConnectionAttempts=60 cloudinit@localhost
 # /var/lib/cloud/instances/abc123/scripts/runcmd
 # /var/lib/cloud/instance/scripts/runcmd
