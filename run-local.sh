@@ -12,14 +12,14 @@ test -f $BASE_IMAGE_NAME || wget https://repo.almalinux.org/almalinux/8/cloud/x8
 
 cat <<EOF | tee meta-data
 instance-id: abc123
-local-hostname: elasticsearch
+local-hostname: cloudinit-demo
 EOF
 
 cp $BASE_IMAGE_NAME $NEW_IMAGE_NAME
 xorriso -as genisoimage -output cloud-init.iso -volid CIDATA -joliet -rock user-data meta-data
 
-  -drive file=cloud-init.iso,media=cdrom \
 qemu-system-x86_64 \
+  -drive file=cloud-init.iso,media=cdrom \
   -drive file=$NEW_IMAGE_NAME \
   -cpu host \
   -m 1G -machine type=q35,accel=kvm \
