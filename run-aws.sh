@@ -2,7 +2,7 @@
 
 set -euxo pipefail
 
-. run-common.sh
+. server-config/run-common.sh
 
 # Get vpc-id
 VPC_ID=$(aws ec2 describe-vpcs --filters Name=is-default,Values=true --query 'Vpcs[0].VpcId' --output text)

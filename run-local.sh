@@ -8,7 +8,7 @@ NEW_IMAGE_NAME=cloud-init-demo.qcow2
 
 test -f $BASE_IMAGE_NAME || wget https://repo.almalinux.org/almalinux/8/cloud/x86_64/images/AlmaLinux-8-GenericCloud-latest.x86_64.qcow2
 
-. run-common.sh
+. server-config/run-common.sh
 
 cat <<EOF | tee meta-data
 instance-id: abc123
