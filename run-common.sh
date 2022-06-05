@@ -8,18 +8,48 @@ cat <<EOF | yq eval ".system_info.default_user.ssh_authorized_keys[0] = \"$(cat 
 
 system_info:
   default_user:
-    name: cloudinit
+    name: ec2-user
     sudo: ALL=(ALL) NOPASSWD:ALL
-runcmd:
-  - [cd, /root]
-  - [dnf, install, -y, https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-8.2.0-x86_64.rpm, bind-utils]
-  - [sed, -Ei, 's/#?xpack\.security\.enabled.*/xpack.security.enabled: false/g', /etc/elasticsearch/elasticsearch.yml]
-  - [cloud-init, clean, -l, -s]
-  - [poweroff]
+users:
+  - default
+  - name: app
+    gecos: Python app user
+    lock_passwd: true
+    homedir: /opt/app
+    ssh_authorized_keys: []
 write_files:
   - encoding: b64
     owner: root:root
-    permissions: '0755'
-    path: /opt/elasticsearch-init.sh
-    content: $(cat init.sh | base64 -w 0)
+    permissions: '0644'
+    path: /etc/systemd/system/python-application.service
+    content: $(cat python-application.service | base64 -w 0)
+  - encoding: b64
+    owner: root:root
+    permissions: '0644'
+    path: /etc/nginx/nginx.conf
+    content: $(cat nginx.conf | base64 -w 0)
+  - encoding: b64
+    owner: root:root
+    permissions: '0644'
+    path: /opt/app.tar.gz
+    content: $(tar cf app.tar app && gzip -f -9 app.tar && base64 -w 0 <app.tar.gz)
+  - path: /etc/chrony.conf
+    append: true
+    content: |
+      server 169.254.169.123 prefer iburst auto_offline
+runcmd:
+  - [dnf, install, -y, epel-release]
+  - [dnf, upgrade, -y]
+  - [dnf, module, enable, -y, nginx:1.20]
+  - [dnf, install, -y, firewalld, nginx, python39]
+  - [setsebool, -P, httpd_can_network_connect, 1]
+  - [firewall-offline-cmd, --add-service=http]
+  - [tar, xf, /opt/app.tar.gz, -C, /opt/app, --strip-components, 1]
+  - [su, app, -c, python3.9 -m pip install --user -r /opt/app/requirements.txt]
+  - [systemctl, enable, nginx]
+  - [systemctl, enable, python-application]
+  - [systemctl, enable, firewalld]
+  - [rm, -f, /home/ec2-user/.ssh/authorized_keys]
+  - [cloud-init, clean, -l, -s]
+  - [poweroff]
 EOF

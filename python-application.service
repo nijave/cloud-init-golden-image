@@ -1,0 +1,14 @@
+[Unit]
+Description=Python application
+After=network-online.target
+
+[Service]
+User=app
+Group=app
+ExecStart=/opt/app/.local/bin/gunicorn app:app -b [::1]:8000
+WorkingDirectory=/opt/app
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+RequiredBy=nginx.service
