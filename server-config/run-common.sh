@@ -22,17 +22,17 @@ write_files:
     owner: root:root
     permissions: '0644'
     path: /etc/systemd/system/python-application.service
-    content: $(cat python-application.service | base64 -w 0)
+    content: $(base64 -w 0 < server-config/python-application.service)
   - encoding: b64
     owner: root:root
     permissions: '0644'
     path: /etc/nginx/nginx.conf
-    content: $(cat nginx.conf | base64 -w 0)
+    content: $(base64 -w 0 < server-config/nginx.conf)
   - encoding: b64
     owner: root:root
     permissions: '0644'
     path: /opt/app.tar.gz
-    content: $(tar cf app.tar app && gzip -f -9 app.tar && base64 -w 0 <app.tar.gz)
+    content: $(tar cf - app | gzip -9 | base64 -w 0)
   - path: /etc/chrony.conf
     append: true
     content: |
