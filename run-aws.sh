@@ -58,6 +58,13 @@ aws ec2 terminate-instances \
 aws ec2 describe-images \
   --image-ids $AMI_ID
 
+aws ssm put-parameter \
+  --name /images/python-application/dev \
+  --value $AMI_ID \
+  --description "CI golden image for python-application" \
+  --type String \
+  --overwrite
+
 # If you need to restart the instance to troubleshoot/debug, clear
 # existing user-data so it doesn't re-run
 # aws ec2 modify-instance-attribute --user-data "" --instance-id
