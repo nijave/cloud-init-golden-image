@@ -4,3 +4,5 @@ user-data
 *.qcow2
 *.tar*
 *.pyc
+.terraform
+*tfstate*
