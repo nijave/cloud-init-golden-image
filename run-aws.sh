@@ -11,6 +11,7 @@ SUBNET_ID=$(aws ec2 describe-subnets --filters Name=vpc-id,Values=$VPC_ID --quer
 # Get security-group id
 SG_ID=$(aws ec2 describe-security-groups --filters Name=vpc-id,Values=$VPC_ID --group-names "default" --query "SecurityGroups[0].GroupId" --output text)
 
+# Find the correct image id using Alma Linux's published list
 IMAGE_ID=$(curl -s https://wiki.almalinux.org/ci-data/aws_amis.csv | grep "$AWS_DEFAULT_REGION" | grep x86_64 | grep -v beta | head -n 1 | awk -F, '{print $4}' | tr -d '"')
 
 # Create ec2 instance
@@ -41,6 +42,7 @@ while [ $(aws ec2 describe-instances --query 'Reservations[0].Instances[0].State
   fi
 done
 
+# Create an image from the EC2 instance
 AMI_ID=$(
   aws ec2 create-image \
     --instance-id $EC2_ID \
@@ -50,6 +52,7 @@ AMI_ID=$(
     --output text
 )
 
+# Capture the image id as a Github Actions output variable
 echo "::set-output name=AMI_ID::$AMI_ID"
 
 aws ec2 terminate-instances \
@@ -58,6 +61,7 @@ aws ec2 terminate-instances \
 aws ec2 describe-images \
   --image-ids $AMI_ID
 
+# Store the image id in Parameter Store so other systems can find it
 aws ssm put-parameter \
   --name /images/python-application/dev \
   --value $AMI_ID \
